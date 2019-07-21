@@ -11,10 +11,10 @@ services:
       - "--entryPoints=Name:https Address::443 TLS"
       - "--docker"
       - "--docker.exposedbydefault=false"
-      - "--docker.domain=example.com"
+      - "--docker.domain=nxtalk.deepsecs.com"
       - "--acme=true"
       - "--acme.acmelogging=true"
-      - "--acme.email=webmaster@example.com"
+      - "--acme.email=webmaster@nxtalk.deepsecs.com"
       - "--acme.storage=acme.json"
       - "--acme.entryPoint=https"
       - "--acme.onhostrule=true"
@@ -32,18 +32,6 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart: always
 
-  db:
-    image: mariadb:10.2
-    container_name: nextcloud_db
-    volumes:
-      - "db:/var/lib/mysql"
-    environment:
-      - "MYSQL_ALLOW_EMPTY_PASSWORD=yes"
-      - "MYSQL_DATABASE=nextcloud"
-      - "MYSQL_USER=nextcloud"
-      - "MYSQL_PASSWORD=asupersecretpassword"
-    restart: always
-
   redis:
     image: redis:4.0-alpine
     container_name: nextcloud_redis
@@ -59,10 +47,10 @@ services:
       - "traefik.backend=collabora"
       - "traefik.port=9980"
       - "traefik.frontend.entryPoints=http"
-      - "traefik.frontend.rule=Host:collabora.example.com"
+      - "traefik.frontend.rule=Host:nxtalk.deepsecs.com"
     environment:
       - "DONT_GEN_SSL_CERT=true"
-      - "domain=collabora.example.com"
+      - "domain=nxtalk.deepsecs.com"
       - "extra_params=--disable-ssl"
     restart: always
 
@@ -70,7 +58,6 @@ services:
     image: crazymax/nextcloud:latest
     container_name: nextcloud
     depends_on:
-      - db
       - redis
     volumes:
       - "nextcloud:/data"
@@ -78,7 +65,7 @@ services:
       - "traefik.enable=true"
       - "traefik.backend=nextcloud"
       - "traefik.port=8000"
-      - "traefik.frontend.rule=Host:nextcloud.example.com"
+      - "traefik.frontend.rule=Host:nxtalk.deepsecs.com"
       - "traefik.frontend.redirect.permanent=true"
       - "traefik.frontend.redirect.regex=https://(.*)/.well-known/(card|cal)dav"
       - "traefik.frontend.redirect.replacement=https://$$1/remote.php/dav/"
@@ -86,37 +73,5 @@ services:
       - "./nextcloud.env"
     restart: always
 
-  cron:
-    image: crazymax/nextcloud:latest
-    container_name: nextcloud_cron
-    depends_on:
-      - nextcloud
-    volumes:
-      - "nextcloud:/data"
-    env_file:
-      - "./nextcloud.env"
-    environment:
-      - "SIDECAR_CRON=1"
-      - "CRON_PERIOD=*/15 * * * *"
-    restart: always
-
-  news_updater:
-    image: crazymax/nextcloud:latest
-    container_name: nextcloud_news_updater
-    depends_on:
-      - nextcloud
-    volumes:
-      - "nextcloud:/data"
-    env_file:
-      - "./nextcloud.env"
-    environment:
-      - "SIDECAR_NEWSUPDATER=1"
-      - "NC_NEWSUPDATER_THREADS=10"
-      - "NC_NEWSUPDATER_TIMEOUT=300"
-      - "NC_NEWSUPDATER_INTERVAL=900"
-      - "NC_NEWSUPDATER_LOGLEVEL=error"
-    restart: always
-
 volumes:
-  db:
   nextcloud:
